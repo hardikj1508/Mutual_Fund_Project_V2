@@ -1,0 +1,153 @@
+[
+    {
+        "file_name": "01_fund_master.csv",
+        "row_count": 40,
+        "column_count": 15,
+        "columns": [
+            "amfi_code",
+            "fund_house",
+            "scheme_name",
+            "category",
+            "sub_category",
+            "plan",
+            "launch_date",
+            "benchmark",
+            "expense_ratio_pct",
+            "exit_load_pct",
+            "min_sip_amount",
+            "min_lumpsum_amount",
+            "fund_manager",
+            "risk_category",
+            "sebi_category_code"
+        ]
+    },
+    {
+        "file_name": "02_nav_history.csv",
+        "row_count": 46000,
+        "column_count": 3,
+        "columns": [
+            "amfi_code",
+            "date",
+            "nav"
+        ]
+    },
+    {
+        "file_name": "03_aum_by_fund_house.csv",
+        "row_count": 90,
+        "column_count": 5,
+        "columns": [
+            "date",
+            "fund_house",
+            "aum_lakh_crore",
+            "aum_crore",
+            "num_schemes"
+        ]
+    },
+    {
+        "file_name": "04_monthly_sip_inflows.csv",
+        "row_count": 48,
+        "column_count": 6,
+        "columns": [
+            "month",
+            "sip_inflow_crore",
+            "active_sip_accounts_crore",
+            "new_sip_accounts_lakh",
+            "sip_aum_lakh_crore",
+            "yoy_growth_pct"
+        ]
+    },
+    {
+        "file_name": "05_category_inflows.csv",
+        "row_count": 144,
+        "column_count": 3,
+        "columns": [
+            "month",
+            "category",
+            "net_inflow_crore"
+        ]
+    },
+    {
+        "file_name": "06_industry_folio_count.csv",
+        "row_count": 21,
+        "column_count": 6,
+        "columns": [
+            "month",
+            "total_folios_crore",
+            "equity_folios_crore",
+            "debt_folios_crore",
+            "hybrid_folios_crore",
+            "others_folios_crore"
+        ]
+    },
+    {
+        "file_name": "07_scheme_performance.csv",
+        "row_count": 40,
+        "column_count": 19,
+        "columns": [
+            "amfi_code",
+            "scheme_name",
+            "fund_house",
+            "category",
+            "plan",
+            "return_1yr_pct",
+            "return_3yr_pct",
+            "return_5yr_pct",
+            "benchmark_3yr_pct",
+            "alpha",
+            "beta",
+            "sharpe_ratio",
+            "sortino_ratio",
+            "std_dev_ann_pct",
+            "max_drawdown_pct",
+            "aum_crore",
+            "expense_ratio_pct",
+            "morningstar_rating",
+            "risk_grade"
+        ]
+    },
+    {
+        "file_name": "08_investor_transactions.csv",
+        "row_count": 32778,
+        "column_count": 13,
+        "columns": [
+            "investor_id",
+            "transaction_date",
+            "amfi_code",
+            "transaction_type",
+            "amount_inr",
+            "state",
+            "city",
+            "city_tier",
+            "age_group",
+            "gender",
+            "annual_income_lakh",
+            "payment_mode",
+            "kyc_status"
+        ]
+    },
+    {
+        "file_name": "09_portfolio_holdings.csv",
+        "row_count": 322,
+        "column_count": 8,
+        "columns": [
+            "amfi_code",
+            "stock_symbol",
+            "stock_name",
+            "sector",
+            "weight_pct",
+            "market_value_cr",
+            "current_price_inr",
+            "portfolio_date"
+        ]
+    },
+    {
+        "file_name": "10_benchmark_indices.csv",
+        "row_count": 8050,
+        "column_count": 3,
+        "columns": [
+            "date",
+            "index_name",
+            "close_value"
+        ]
+    }
+]
