@@ -161,8 +161,6 @@ def validate_nav_history():
     print(f"Distinct finds: {df['amfi_code'].nunique():,}")
     print(f"Distinct valid dates: {dates.nunique():,}")
 
-
-
 def validate_aum():
 
     file_path = RAW_DATA_DIR / "03_aum_by_fund_house.csv"
@@ -210,19 +208,19 @@ def validate_aum():
     invalid_schemes  =int(schemes.isna().sum())
 
     print(
-        f"{'PASS' if invalid_dates == 0 else 'FAIL'}"
+        f"{'PASS' if invalid_dates == 0 else 'FAIL'}: "
         f"Date parsing; invalid rows: {invalid_dates}"
     )
     print(
-        f"{'PASS' if invalid_aum_lakh == 0 else 'FAIL'}"
+        f"{'PASS' if invalid_aum_lakh == 0 else 'FAIL'}: "
         f"AUM lakh-crore numeric conversion; invalid rows: {invalid_aum_lakh}"
     )
     print(
-        f"{'PASS' if invalid_aum_crore == 0 else 'FAIL'}"
+        f"{'PASS' if invalid_aum_crore == 0 else 'FAIL'}: "
         f"AUM crore numeric conversion; invalid rows: {invalid_aum_crore}"
     )
     print(
-        f"{'PASS' if invalid_schemes == 0 else 'FAIL'}"
+        f"{'PASS' if invalid_schemes == 0 else 'FAIL'}: "
         f"Scheme-count numeric conversion; invalid rows: {invalid_schemes}"
     )
 
@@ -384,7 +382,7 @@ def validate_sip():
     duplicate_months = int(months[months.notna()].duplicated().sum())
 
     print(
-        f"{'PASS' if duplicate_months == 0 else 'FAIL' }"
+        f"{'PASS' if duplicate_months == 0 else 'FAIL' }: "
         f"Duplicate months: {duplicate_months}"    
         )
 
@@ -588,7 +586,7 @@ def validate_folio_count():
         invalid_count = int(values.isna().sum() - df[column].isna().sum())
 
         print(
-            f"{'PASS' if invalid_count == 0 else 'FAIL'}"
+            f"{'PASS' if invalid_count == 0 else 'FAIL'}: "
             f"{column} numeric conversion; invalid rows: "
             f"{invalid_count}"
         )
@@ -607,6 +605,44 @@ def validate_folio_count():
             f"{'PASS' if negative_count == 0 else 'FAIL'}: "
             f"Negative {column} values: {negative_count}"
         )
+
+    category_columns = [
+        "equity_folios_crore",
+        "debt_folios_crore",
+        "hybrid_folios_crore",
+        "others_folios_crore"
+    ]
+
+    total_folios = pd.to_numeric(df["total_folios_crore"], errors="coerce")
+
+    category_sum = (
+        df[category_columns]
+        .apply(pd.to_numeric, errors="coerce")
+        .sum(axis=1, min_count=len(category_columns))
+    )
+
+    difference = total_folios - category_sum
+
+    tolerance = 0.02
+    outside_tolerance = difference.abs() > tolerance
+
+    if outside_tolerance.any():
+        print(
+            "FAIL: Folio reconciliation differences exceed "
+            f"{tolerance:.2f} crore: "
+            f"{outside_tolerance.sum()} snapshots"
+        )
+        print(
+            df.loc[
+                outside_tolerance,
+                ["month", "total_folios_crore"]
+            ].assign(
+                category_sum=category_sum[outside_tolerance],
+                difference=difference[outside_tolerance],
+            ).round(4).to_string(index=False)
+        )
+    else:
+        print(f"PASS: Folio totals reconcile within ±{tolerance:.2f} crore")
 
     print("-" * 55)
     print(f"Rows: {len(df):,}")
@@ -824,18 +860,49 @@ def validate_investor_transactions():
     else:
         print("PASS: No negative transaction amounts")
 
-    transaction_types = (df["transaction_type"].dropna().astype(str).str.strip().str.casefold())
+    transaction_types = (df["transaction_type"].dropna().astype(str).str.strip().str.upper())
+    allowed_transaction_types = {"SIP", "LUMPSUM", "REDEMPTION"}
+    observed_transaction_types = set(transaction_types.unique())
 
-    print(
-        "Obsereved transaction types:",
-        sorted(transaction_types.unique().tolist())
-    )
+    print("Observed transaction types:", sorted(observed_transaction_types))
 
     if (transaction_types == "").any():
         print("FAIL: Blank transaction types found")
     else:
         print("PASS: No blank transaction types")
 
+    unexpected_types = sorted(observed_transaction_types - allowed_transaction_types)
+
+    if unexpected_types:
+        print(f"FAIL: Unexpectd transaction types: {unexpected_types}")
+    else:
+        print("PASS: All transaction types are allowed")
+
+    kyc_status = (df["kyc_status"].dropna().astype(str).str.strip().str.upper())
+
+    allowed_kyc_statuses = {"PENDING", "VERIFIED"}
+    observed_kyc_statuses = set(kyc_status.unique())
+
+    if df["kyc_status"].isna().any():
+        print(
+            "FAIL: Missing KYC statuses:",
+            df["kyc_status"].isna().sum()
+        )
+    else:
+        print("PASS: No missing KYC statuses")
+
+    if (kyc_status == "").any():
+        print("FAIL: Blank KYC statuses found")
+    else:
+        print("PASS: No blank KYC statusess")
+
+    unexpected_kyc_statuses = sorted(observed_kyc_statuses - allowed_kyc_statuses)
+
+    if unexpected_kyc_statuses:
+        print("FAIL: Unexpected KYC statuses:", unexpected_kyc_statuses)
+    else:
+        print("PASS: All KYC statuses are allowed")
+    
     fund_master_path = RAW_DATA_DIR / "01_fund_master.csv"
     fund_master = pd.read_csv(fund_master_path)
 
@@ -857,9 +924,94 @@ def validate_investor_transactions():
     print(f"Distinct AMFI codes: {df['amfi_code'].nunique()}")
     print("Repeated investor IDs:", int(df["investor_id"].duplicated().sum()))
 
+    investor_ids = df["investor_id"].astype("string").str.strip()
+    valid_id_format = investor_ids.str.fullmatch(r"INV\d{6}").fillna(False)
+    invalid_id_count = (~valid_id_format).sum()
+
+    if invalid_id_count:
+        print(f"FAIL: Invalid investor ID formats: {invalid_id_count}")
+    else:
+        print("PASS: All investor IDs match INV + 6 digits")
+
+    exact_duplicates = df.duplicated().sum()
+
+    if exact_duplicates:
+        print(f"FAIL: Exact duplicate rows: {exact_duplicates}")
+    else:
+        print("PASS: No exact duplicate rows")
+
+    candidate_key = [
+        "investor_id",
+        "transaction_date",
+        "amfi_code",
+        "transaction_type",
+        "amount_inr"
+    ]
+
+    duplicate_keys = df.duplicated(subset=candidate_key).sum()
+
+    if duplicate_keys:
+        print("INFO: Potential duplicate transaction keys:", duplicate_keys)
+    else:
+        print("PASS: No duplicate candidate transaction keys")
+
+    investor_attributes = [
+        "state",
+        "city",
+        "age_group",
+        "gender",
+        "annual_income_lakh",
+    ]
+
+    Attribute_counts = df.groupby("investor_id")[investor_attributes].nunique(dropna=False)
+
+    inconsistent_attributes = Attribute_counts.gt(1).sum()
+
+    for column, count in inconsistent_attributes.items():
+        if count:
+            print(f"WARNING: {count} investors have inconsistent {column} values")
+        else:
+            print(f"PASS: {column} is consistent per investor")
+
+    kyc_counts = df.groupby("investor_id")["kyc_status"].nunique(dropna=False)
+
+    changing_kyc = (kyc_counts >  1).sum()
+
+    print("INFO: Investors with multiple KYC statuses:", changing_kyc)
+
+    kyc_dates = df.copy()
+    kyc_dates["transaction_date"] = pd.to_datetime(
+        kyc_dates["transaction_date"], errors="coerce"
+    )
+
+    first_status_dates = (
+        kyc_dates.groupby(["investor_id", "kyc_status"])[
+            "transaction_date"
+        ].min().unstack()
+    )
+
+    if {"Pending", "Verified"}.issubset(first_status_dates.columns):
+        both_statuses = first_status_dates.dropna(
+            subset=["Pending", "Verified"]
+        )
+
+        pending_first = (
+            both_statuses["Pending"] < both_statuses["Verified"]
+        ).sum()
+
+        verified_first = (
+            both_statuses["Verified"] < both_statuses["Pending"]
+        ).sum()
+
+        same_first_date = (
+            both_statuses["Pending"] == both_statuses["Verified"]
+        ).sum()
+
+        print("INFO: KYC status order (Pending first):", int(pending_first))
+        print("INFO: KYC status order (Verified first):", int(verified_first))
+        print("INFO: KYC statuses first observed on same date:", int(same_first_date))
 
 def validate_portfolio_holdings():
-    """Validate the portfolio holdings dataset."""
 
     file_path = RAW_DATA_DIR / "09_portfolio_holdings.csv"
     df = pd.read_csv(file_path)
@@ -888,7 +1040,6 @@ def validate_portfolio_holdings():
 
     print("PASS: All required columns are present")
 
-    # 1. Check missing values in key fields
     key_fields = [
         "amfi_code",
         "stock_symbol",
@@ -904,7 +1055,6 @@ def validate_portfolio_holdings():
         else:
             print(f"PASS: No missing values in {column}")
 
-    # 2. Validate portfolio dates
     dates = pd.to_datetime(df["portfolio_date"], errors="coerce")
     invalid_dates = (
         dates.isna() & df["portfolio_date"].notna()
@@ -915,7 +1065,6 @@ def validate_portfolio_holdings():
     else:
         print("PASS: Portfolio dates parse successfully")
 
-    # 3. Validate numeric fields
     numeric_fields = [
         "weight_pct",
         "market_value_cr",
@@ -938,7 +1087,6 @@ def validate_portfolio_holdings():
         else:
             print(f"PASS: {column} is numeric or missing")
 
-    # 4. Check negative values
     for column in numeric_fields:
         values = pd.to_numeric(df[column], errors="coerce")
         negative_count = (values < 0).sum()
@@ -951,16 +1099,40 @@ def validate_portfolio_holdings():
         else:
             print(f"PASS: No negative {column} values")
 
-    # 5. Check portfolio weights outside 0–100%
     weights = pd.to_numeric(df["weight_pct"], errors="coerce")
     invalid_weights = ((weights < 0) | (weights > 100)).sum()
 
     if invalid_weights:
-        print(f"FAIL: Weights outside 0–100%: {invalid_weights}")
+        print(f"FAIL: Weights outside 0-100%: {invalid_weights}")
     else:
-        print("PASS: Weights are within 0–100%")
+        print("PASS: Weights are within 0-100%")
 
-    # 6. Check duplicate fund-stock-date combinations
+    weight_totals = (
+        df.assign(
+            weight_pct = pd.to_numeric(
+                df["weight_pct"], errors="coerce"
+            )
+        )
+        .groupby("amfi_code")["weight_pct"]
+        .sum(min_count=1)
+    )
+
+    tolerance = 0.05
+
+    outside_tolerance = weight_totals[(weight_totals < 100 - tolerance) | (weight_totals > 100 + tolerance)]
+
+    if outside_tolerance.empty:
+        print(
+            "PASS: All fund weight totals are within "
+            f"100% ± {tolerance:.2f}%"
+        )
+    else:
+        print(
+            f"FAIL: {len(outside_tolerance)} funds have "
+            "weight totals outside tolerance:"
+        )
+        print(outside_tolerance.round(4).to_string())
+
     duplicate_keys = df.duplicated(
         subset=["amfi_code", "stock_symbol", "portfolio_date"]
     ).sum()
@@ -974,7 +1146,6 @@ def validate_portfolio_holdings():
     else:
         print("PASS: No duplicate fund-stock-date combinations")
 
-    # 7. Check AMFI codes against the fund master
     fund_master_path = RAW_DATA_DIR / "01_fund_master.csv"
     fund_master = pd.read_csv(fund_master_path)
 
@@ -1002,7 +1173,6 @@ def validate_portfolio_holdings():
     else:
         print("PASS: All holding AMFI codes exist in fund master")
 
-    # 8. Summary
     print(f"Rows: {len(df):,}")
     print(f"Columns: {len(df.columns)}")
     print(f"Distinct funds: {df['amfi_code'].nunique()}")
