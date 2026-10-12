@@ -1009,6 +1009,84 @@ def validate_portfolio_holdings():
     print(f"Distinct stocks: {df['stock_symbol'].nunique()}")
     print(f"Distinct portfolio dates: {dates.nunique()}")
 
+def validate_benchmark_indinces():
+
+    file_path = RAW_DATA_DIR / "10_benchmark_indices.csv"
+    df = pd.read_csv(file_path)
+
+    required_columns = [
+        "date",
+        "index_name",
+        "close_value"
+    ]
+
+    print("\n--- Benchmark Indices Validation ---")
+
+    missing_columns = [
+        column for column in required_columns
+        if column not in df.columns
+    ]
+
+    if missing_columns:
+        print(f"FAIL: Missing columns: {missing_columns}")
+        return
+
+    print("PASS: All reqiured columns are present")
+
+    for column in required_columns:
+        missing_count = df[column].isna().sum()
+
+        if missing_count:
+            print(f"FAIL: {column} has {missing_count} missing values")
+        else:
+            print(f"PASS: No missing values in {column}")
+
+    dates = pd.to_datetime(df["date"], errors="coerce")
+    invalid_dates = (dates.isna() & df["date"].notna()).sum()
+
+    if invalid_dates:
+        print(f"FAIL: Invalid dates: {invalid_dates}")
+    else:
+        print("PASS: Dates parse succesfully")
+
+    original_missing = df ["close_value"].isna().sum()
+    close_values = pd.to_numeric(df["close_value"], errors="coerce")
+
+    invalid_values = (close_values.isna().sum() - original_missing)
+
+    if invalid_values:
+        print(f"FAIL: Non-numeric close values: {invalid_values}")
+    else:
+        print("PASS: Close values are numeric or missing")
+
+    non_positive = (close_values <= 0).sum()
+
+    if non_positive:
+        print(f"FAIL: Non-positive close values: {non_positive}")
+    else:
+        print("PASS: No non-positive close values")
+
+    duplicate_count = df.duplicated(subset=["index_name", "date"]).sum()
+
+    if duplicate_count:
+        print(f"FAIL: Duplicate index-rate combinations: {duplicate_count}")
+    else:
+        print("PASS: No duplicate index-date combinations")
+
+    print(f"Rows: {len(df):,}")
+    print(f"Columns: {len(df.columns)}")
+    print(f"Distinct indices: {df['index_name'].nunique()}")
+    print(f"Distinct valid dates: {dates.nunique()}")
+
+    if dates.notna().any():
+        print(f"First date: {dates.min().date()}")
+        print(f"Last date: {dates.max().date()}")
+
+    print(
+        "obsereved index names",
+        sorted(df["index_name"].dropna().astype(str).unique().tolist())
+    )
+
 if __name__ == "__main__":
     validate_fund_master()
     validate_nav_history()
@@ -1019,3 +1097,4 @@ if __name__ == "__main__":
     validate_scheme_performance()
     validate_investor_transactions()
     validate_portfolio_holdings()
+    validate_benchmark_indinces()
