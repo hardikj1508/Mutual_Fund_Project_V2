@@ -26,3 +26,6 @@ Thumbs.db
 
 # VS Code settings
 .vscode/
+
+# Raw source datasets — keep out of Git
+data/raw/
