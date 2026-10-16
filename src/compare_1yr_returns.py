@@ -1,22 +1,11 @@
-
 import pandas as pd
-
-
-# --------------------------------------------------
-# 1. Load datasets
-# --------------------------------------------------
 
 nav = pd.read_csv("data/raw/02_nav_history.csv")
 performance = pd.read_csv("data/raw/07_scheme_performance.csv")
 fund_master = pd.read_csv("data/raw/01_fund_master.csv")
 
-
-# --------------------------------------------------
-# 2. Standardize AMFI codes
-# --------------------------------------------------
-
 def normalize_amfi_code(series):
-    """Normalize AMFI codes so they can be safely merged."""
+
     return (
         pd.to_numeric(series, errors="coerce")
         .astype("Int64")
@@ -24,29 +13,17 @@ def normalize_amfi_code(series):
 
 
 nav["amfi_code"] = normalize_amfi_code(nav["amfi_code"])
-performance["amfi_code"] = normalize_amfi_code(
-    performance["amfi_code"]
-)
-fund_master["amfi_code"] = normalize_amfi_code(
-    fund_master["amfi_code"]
-)
-
-
-# --------------------------------------------------
-# 3. Clean NAV data
-# --------------------------------------------------
+performance["amfi_code"] = normalize_amfi_code(performance["amfi_code"])
+fund_master["amfi_code"] = normalize_amfi_code(fund_master["amfi_code"])
 
 nav["date"] = pd.to_datetime(nav["date"], errors="coerce")
 nav["nav"] = pd.to_numeric(nav["nav"], errors="coerce")
 
-# Remove records that cannot be used to calculate returns.
 nav = nav.dropna(subset=["amfi_code", "date", "nav"]).copy()
 nav = nav[nav["nav"] > 0].copy()
 
-# Sort chronologically within each fund.
 nav = nav.sort_values(["amfi_code", "date"])
 
-# Check for duplicate fund-date observations.
 duplicate_count = nav.duplicated(
     subset=["amfi_code", "date"],
     keep=False,
@@ -60,21 +37,11 @@ if duplicate_count > 0:
         "Resolve these before calculating returns."
     )
 
-
-# --------------------------------------------------
-# 4. Define the comparison period
-# --------------------------------------------------
-
 latest_date = nav["date"].max()
 target_date = latest_date - pd.DateOffset(years=1)
 
 print("\nLatest NAV date:", latest_date.date())
 print("One-year target date:", target_date.date())
-
-
-# --------------------------------------------------
-# 5. Calculate one-year annualized returns
-# --------------------------------------------------
 
 results = []
 
@@ -98,8 +65,7 @@ for code, group in nav.groupby("amfi_code"):
     years = elapsed_days / 365.25
 
     calculated_return = (
-        (ending["nav"] / starting["nav"]) ** (1 / years) - 1
-    ) * 100
+        (ending["nav"] / starting["nav"]) ** (1 / years) - 1) * 100
 
     results.append({
         "amfi_code": code,
@@ -112,14 +78,7 @@ for code, group in nav.groupby("amfi_code"):
 
 calculated = pd.DataFrame(results)
 
-
-# --------------------------------------------------
-# 6. Compare calculated and supplied returns
-# --------------------------------------------------
-
-comparison = performance[
-    ["amfi_code", "scheme_name", "return_1yr_pct"]
-].copy()
+comparison = performance[["amfi_code", "scheme_name", "return_1yr_pct"]].copy()
 
 comparison["return_1yr_pct"] = pd.to_numeric(
     comparison["return_1yr_pct"],
@@ -133,20 +92,12 @@ comparison = comparison.merge(
     validate="one_to_one",
 )
 
-comparison["difference_pp"] = (
-    comparison["calculated_1yr_pct"]
-    - comparison["return_1yr_pct"]
-)
+comparison["difference_pp"] = (comparison["calculated_1yr_pct"] - comparison["return_1yr_pct"])
 
 print(
     "Funds compared:",
     comparison["calculated_1yr_pct"].notna().sum(),
 )
-
-
-# --------------------------------------------------
-# 7. Difference summary
-# --------------------------------------------------
 
 print("\nDifference summary (percentage points):")
 
@@ -156,11 +107,6 @@ print(
     .round(3)
     .to_string()
 )
-
-
-# --------------------------------------------------
-# 8. Largest differences
-# --------------------------------------------------
 
 print("\nLargest absolute differences:")
 
@@ -175,32 +121,12 @@ print(
             "calculated_1yr_pct",
             "difference_pp",
         ]
-    ]
-    .head(10)
-    .round(3)
-    .to_string(index=False)
+    ].head(10).round(3).to_string(index=False)
 )
-
-
-# --------------------------------------------------
-# 9. Correlation
-# --------------------------------------------------
 
 print("\nCorrelation between supplied and calculated returns:")
 
-print(
-    comparison[
-        ["return_1yr_pct", "calculated_1yr_pct"]
-    ]
-    .corr()
-    .round(3)
-    .to_string()
-)
-
-
-# --------------------------------------------------
-# 10. Sample comparison
-# --------------------------------------------------
+print(comparison[["return_1yr_pct", "calculated_1yr_pct"]].corr().round(3).to_string())
 
 print("\nComparison sample:")
 
@@ -212,16 +138,8 @@ print(
             "calculated_1yr_pct",
             "difference_pp",
         ]
-    ]
-    .head(15)
-    .round(3)
-    .to_string(index=False)
+    ].head(15).round(3).to_string(index=False)
 )
-
-
-# --------------------------------------------------
-# 11. Classify plans using the fund master
-# --------------------------------------------------
 
 print("\nRegular vs Direct plan return comparison:")
 
@@ -232,26 +150,13 @@ comparison = comparison.merge(
     validate="one_to_one",
 )
 
-comparison["plan_type"] = (
-    comparison["plan"]
-    .astype("string")
-    .str.strip()
-    .str.title()
-)
+comparison["plan_type"] = (comparison["plan"].astype("string").str.strip().str.title())
 
 print(
     comparison.groupby("plan_type", dropna=False)[
         ["return_1yr_pct", "calculated_1yr_pct", "difference_pp"]
-    ]
-    .agg(["count", "mean", "median"])
-    .round(3)
-    .to_string()
+    ].agg(["count", "mean", "median"]).round(3).to_string()
 )
-
-
-# --------------------------------------------------
-# 12. Funds without a plan classification
-# --------------------------------------------------
 
 print("\nFunds with missing plan classification:")
 
@@ -270,11 +175,6 @@ print(
     ].to_string(index=False)
 )
 
-
-# --------------------------------------------------
-# 13. ETF details
-# --------------------------------------------------
-
 print("\nETF scheme details from fund master:")
 
 print(
@@ -282,11 +182,6 @@ print(
         fund_master["amfi_code"].eq(118635)
     ].to_string(index=False)
 )
-
-
-# --------------------------------------------------
-# 14. Fund identity reconciliation
-# --------------------------------------------------
 
 print("\nFund identity reconciliation:")
 
@@ -376,7 +271,5 @@ print(
             "end_date",
             "end_date_offset_days",
         ]
-    ]
-    .head(10)
-    .to_string(index=False)
+    ].head(10).to_string(index=False)
 )
