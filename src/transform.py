@@ -1,4 +1,3 @@
-
 from getpass import getpass
 
 from sqlalchemy import create_engine, text
@@ -38,13 +37,7 @@ def create_database_engine():
 
     return create_engine(connection_url)
 
-
-# All statements run in one transaction.
-# A failure rolls back the drops, table creation, inserts and constraints.
 TRANSFORM_SQL = [
-    # ---------------------------------------------------------
-    # 1. FUND MASTER
-    # ---------------------------------------------------------
     """
     CREATE TABLE analytics.fund_master (
         amfi_code INTEGER NOT NULL,
@@ -85,10 +78,6 @@ TRANSFORM_SQL = [
         NULLIF(TRIM(sebi_category_code), '')
     FROM staging.fund_master
     """,
-
-    # ---------------------------------------------------------
-    # 2. NAV HISTORY
-    # ---------------------------------------------------------
     """
     CREATE TABLE analytics.nav_history (
         amfi_code INTEGER NOT NULL,
@@ -109,10 +98,6 @@ TRANSFORM_SQL = [
         TRIM(nav)::NUMERIC(12,4)
     FROM staging.nav_history
     """,
-
-    # ---------------------------------------------------------
-    # 3. AUM BY FUND HOUSE
-    # ---------------------------------------------------------
     """
     CREATE TABLE analytics.aum_by_fund_house (
         date DATE NOT NULL,
@@ -134,10 +119,6 @@ TRANSFORM_SQL = [
         TRIM(num_schemes)::INTEGER
     FROM staging.aum_by_fund_house
     """,
-
-    # ---------------------------------------------------------
-    # 4. MONTHLY SIP INFLOWS
-    # ---------------------------------------------------------
     """
     CREATE TABLE analytics.monthly_sip_inflows (
         month DATE NOT NULL,
@@ -160,10 +141,6 @@ TRANSFORM_SQL = [
         NULLIF(TRIM(yoy_growth_pct), '')::NUMERIC(10,4)
     FROM staging.monthly_sip_inflows
     """,
-
-    # ---------------------------------------------------------
-    # 5. CATEGORY INFLOWS
-    # ---------------------------------------------------------
     """
     CREATE TABLE analytics.category_inflows (
         month DATE NOT NULL,
@@ -181,10 +158,6 @@ TRANSFORM_SQL = [
         TRIM(net_inflow_crore)::NUMERIC(12,2)
     FROM staging.category_inflows
     """,
-
-    # ---------------------------------------------------------
-    # 6. INDUSTRY FOLIO COUNT
-    # ---------------------------------------------------------
     """
     CREATE TABLE analytics.industry_folio_count (
         month DATE NOT NULL,
@@ -207,10 +180,6 @@ TRANSFORM_SQL = [
         TRIM(others_folios_crore)::NUMERIC(12,4)
     FROM staging.industry_folio_count
     """,
-
-    # ---------------------------------------------------------
-    # 7. SCHEME PERFORMANCE
-    # ---------------------------------------------------------
     """
     CREATE TABLE analytics.scheme_performance (
         amfi_code INTEGER NOT NULL,
@@ -262,10 +231,6 @@ TRANSFORM_SQL = [
         NULLIF(TRIM(risk_grade), '')
     FROM staging.scheme_performance
     """,
-
-    # ---------------------------------------------------------
-    # 8. INVESTOR TRANSACTIONS
-    # ---------------------------------------------------------
     """
     CREATE TABLE analytics.investor_transactions (
         transaction_row_id BIGINT NOT NULL,
@@ -323,10 +288,6 @@ TRANSFORM_SQL = [
         NULLIF(TRIM(kyc_status), '')
     FROM staging.investor_transactions
     """,
-
-    # ---------------------------------------------------------
-    # 9. PORTFOLIO HOLDINGS
-    # ---------------------------------------------------------
     """
     CREATE TABLE analytics.portfolio_holdings (
         amfi_code INTEGER NOT NULL,
@@ -357,10 +318,6 @@ TRANSFORM_SQL = [
         TRIM(portfolio_date)::DATE
     FROM staging.portfolio_holdings
     """,
-
-    # ---------------------------------------------------------
-    # 10. BENCHMARK INDICES
-    # ---------------------------------------------------------
     """
     CREATE TABLE analytics.benchmark_indices (
         date DATE NOT NULL,
@@ -386,7 +343,6 @@ def rebuild_analytics(engine):
     with engine.begin() as connection:
         connection.execute(text("CREATE SCHEMA IF NOT EXISTS analytics"))
 
-        # Drop child tables before their referenced parent table.
         for table_name in [
             "investor_transactions",
             "nav_history",
@@ -423,7 +379,6 @@ def rebuild_analytics(engine):
                     f"expected {expected_count}, got {actual_count}"
                 )
 
-        # Explicit foreign-key orphan checks.
         for table_name in [
             "nav_history",
             "scheme_performance",
@@ -468,7 +423,6 @@ def rebuild_analytics(engine):
 
         print("PASS | benchmark date/index keys are unique")
 
-    # engine.begin() commits only if all statements and checks succeed.
     print("\nAnalytics rebuild committed successfully.")
 
 
