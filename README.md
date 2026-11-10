@@ -19,7 +19,26 @@ The objective is to create a structured analytics workflow covering:
 
 The project uses Python for data processing and validation, PostgreSQL for data storage and SQL-based reporting, and Power BI for interactive analysis and visualization.
 
-## 2. Technology Stack
+## 2. Dashboard Preview
+
+The Power BI dashboard consists of five interactive pages covering mutual fund market trends, scheme performance, risk metrics, investor activity and portfolio holdings.
+
+### 1. Market Overview
+![Market Overview](screenshots/01-market-overview.png)
+
+### 2. Fund Performance
+![Fund Performance](screenshots/02-fund-performance.png)
+
+### 3. Risk Analysis
+![Risk Analysis](screenshots/03-risk-analysis.png)
+
+### 4. Investor Activity
+![Investor Activity](screenshots/04-investor-activity.png)
+
+### 5. Portfolio & Holdings
+![Portfolio & Holdings](screenshots/05-portfolio-holdings.png)
+
+## 3. Technology Stack
 
 | Technology | Purpose |
 |---|---|
@@ -31,7 +50,7 @@ The project uses Python for data processing and validation, PostgreSQL for data 
 | Excel / CSV | Source data formats |
 | Git & GitHub | Version control and project hosting |
 
-## 3. Setup and Execution
+## 4. Setup and Execution
 
 ### Prerequisites
 
@@ -80,7 +99,7 @@ The SQL reporting views are available in `sql/reporting/`.
 
 The Power BI dashboard is available in the `powerbi/` directory.
 
-## 4. Project Architecture
+## 5. Project Architecture
 
 The project follows a layered data workflow:
 
@@ -91,7 +110,7 @@ The project follows a layered data workflow:
 
 The workflow separates source data, transformation, analytical storage and reporting.
 
-## 5. Dataset Overview
+## 6. Dataset Overview
 
 The project contains 10 datasets with a combined **87,533 records**.
 
@@ -109,7 +128,7 @@ The project contains 10 datasets with a combined **87,533 records**.
 | Benchmark Indices | 8,050 |
 | **Total** | **87,533** |
 
-## 6. Python Processing and Validation
+## 7. Python Processing and Validation
 
 Python scripts handle ingestion, staging, transformation and validation.
 
@@ -124,7 +143,7 @@ Key scripts include:
 
 Validation covers dataset dimensions, distinct identifiers, date coverage and other data-quality checks.
 
-## 7. PostgreSQL Reporting Layer
+## 8. PostgreSQL Reporting Layer
 
 Four reporting views are created to provide analysis-ready datasets for Power BI.
 
@@ -137,7 +156,7 @@ Four reporting views are created to provide analysis-ready datasets for Power BI
 
 The reporting layer reduces the need for repeated joins and calculations within Power BI.
 
-## 8. Power BI Dashboard
+## 9. Power BI Dashboard
 
 The interactive dashboard contains five analytical pages:
 
@@ -149,7 +168,7 @@ The interactive dashboard contains five analytical pages:
 
 The report includes interactive slicers, cross-page filtering where applicable, KPI cards and drill-down analysis.
 
-## 9. Data Validation and Performance Reconciliation
+## 10. Data Validation and Performance Reconciliation
 
 The project compares supplied scheme performance figures against returns calculated from NAV history.
 
@@ -168,7 +187,7 @@ The underlying cause has not been established. Original supplied values are pres
 
 Additional details are available in `reports/performance_reconciliation.md`.
 
-## 10. Data Limitations and Assumptions
+## 11. Data Limitations and Assumptions
 
 - Investor transaction records are synthetic and should not be interpreted as actual customer transactions.
 - Portfolio holdings represent a snapshot rather than continuously updated holdings.
@@ -177,7 +196,7 @@ Additional details are available in `reports/performance_reconciliation.md`.
 - Fund-house AUM values use the latest available record for each fund house; reporting dates may differ between fund houses.
 - Raw source datasets are excluded from the repository and must be obtained separately to reproduce the complete pipeline.
 
-## 11. Repository Structure
+## 12. Repository Structure
 
 ```text
 Mutual_Fund_Project_V2/
@@ -217,6 +236,6 @@ Mutual_Fund_Project_V2/
 └── requirements.txt
 ```
 
-## 12. Project Status
+## 13. Project Status
 
 The data processing pipeline, PostgreSQL reporting layer and five-page Power BI dashboard have been developed. The project is currently in its documentation and repository preparation stage.

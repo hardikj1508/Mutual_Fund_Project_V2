@@ -1,3 +1,4 @@
+-- PostgreSQL reporting view
 
 CREATE OR REPLACE VIEW reporting.vw_fund_overview AS
 SELECT
