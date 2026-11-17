@@ -81,19 +81,41 @@ pip install -r requirements.txt
 
 ### Database Configuration
 
-- Create the PostgreSQL database.
-- Configure the database connection using the project's environment configuration.
-- Ensure the required raw datasets are available before running the pipeline.
-- Do not commit database passwords, credentials or other sensitive configuration details.
+1. Install and start PostgreSQL.
+2. Create a database named `bluestock_mf_v2`.
+3. Ensure the PostgreSQL connection settings in the Python scripts match your local configuration:
+   - Host: `localhost`
+   - Port: `5432`
+   - Database: `bluestock_mf_v2`
+   - Username: `postgres` (or your configured PostgreSQL user)
+4. The scripts prompt for the PostgreSQL password at runtime using `getpass()`.
+5. Place the ten required source CSV files in `data/raw/`.
+6. Ensure `data/processed/source_inventory.json` is available before running the staging script.
+
+Do not commit database passwords or other sensitive credentials.
 
 ### Project Execution
 
-The project includes Python scripts for the data processing workflow:
+Run the following scripts from the project root directory, in order:
 
-1. Data ingestion
-2. Staging
-3. Transformation
-4. Validation
+**1. Data Ingestion**
+
+```bash
+python src/ingestion.py
+```
+**2. Staging**
+```bash
+python src/staging.py
+```
+**3. Transformation**
+```bash
+python src/transform.py
+```
+**4. Validation**
+```bash
+python src/validation.py
+```
+> **Note:** The transformation script rebuilds the analytics tables. Run it only when you intend to recreate that layer.
 
 The SQL reporting views are available in `sql/reporting/`.
 

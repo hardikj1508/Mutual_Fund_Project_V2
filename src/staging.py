@@ -97,7 +97,7 @@ def load_csv_to_staging(engine, inventory:list[dict]) -> None:
 
         df = pd.read_csv(file_path, dtype=str, keep_default_na=False)
 
-        print(f"\nLoading {file_name} -> staging.{file_name}")
+        print(f"\nLoading {file_name} -> staging.{table_name}")
 
         df.to_sql(
             name=table_name,

@@ -52,7 +52,7 @@ def inspect_source_files():
     )
     
     print("-" * 70)
-    print(f"Total CSV files: {len (inventory)}")
+    print(f"Total CSV files: {len(inventory)}")
     print(f"Total source rows: {total_rows:,}")
     
     PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
